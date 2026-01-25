@@ -1,0 +1,107 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Student & Course API",
+    "version": "1.0.0",
+    "description": "REST API for managing students and courses"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5000"
+    }
+  ],
+  "paths": {
+    "/api/students": {
+      "get": {
+        "summary": "Get all students",
+        "responses": {
+          "200": { "description": "Success" },
+          "500": { "description": "Server error" }
+        }
+      },
+      "post": {
+        "summary": "Create a student",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "course", "level"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "course": { "type": "string" },
+                  "level": { "type": "number" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Created" },
+          "400": { "description": "Validation error" }
+        }
+      }
+    },
+    "/api/students/{id}": {
+      "put": {
+        "summary": "Update student",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true }
+        ],
+        "responses": {
+          "200": { "description": "Updated" },
+          "400": { "description": "Invalid ID" },
+          "404": { "description": "Not found" }
+        }
+      },
+      "delete": {
+        "summary": "Delete student",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true }
+        ],
+        "responses": {
+          "200": { "description": "Deleted" },
+          "404": { "description": "Not found" }
+        }
+      }
+    },
+
+    "/api/courses": {
+      "get": {
+        "summary": "Get all courses",
+        "responses": {
+          "200": { "description": "Success" }
+        }
+      },
+      "post": {
+        "summary": "Create course",
+        "responses": {
+          "201": { "description": "Created" },
+          "400": { "description": "Validation error" }
+        }
+      }
+    },
+    "/api/courses/{id}": {
+      "put": {
+        "summary": "Update course",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true }
+        ],
+        "responses": {
+          "200": { "description": "Updated" },
+          "400": { "description": "Invalid ID" }
+        }
+      },
+      "delete": {
+        "summary": "Delete course",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true }
+        ],
+        "responses": {
+          "200": { "description": "Deleted" }
+        }
+      }
+    }
+  }
+}
