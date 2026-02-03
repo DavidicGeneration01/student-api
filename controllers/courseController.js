@@ -5,9 +5,9 @@ const mongoose = require('mongoose');
 exports.getCourses = async (req, res) => {
   try {
     const courses = await Course.find();
-    res.status(200).json(courses);
+    res.status(200).json({ success: true, data: courses });
   } catch {
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 };
 
@@ -22,11 +22,11 @@ exports.getCourseById = async (req, res) => {
   try {
     const course = await Course.findById(id);
     if (!course) {
-      return res.status(404).json({ message: 'Course not found' });
+      return res.status(404).json({ success: false, message: 'Course not found' });
     }
-    res.status(200).json(course);
+    res.status(200).json({ success: true, data: course });
   } catch {
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 };
 
@@ -40,9 +40,9 @@ exports.createCourse = async (req, res) => {
 
   try {
     const course = await Course.create(req.body);
-    res.status(201).json(course);
+    res.status(201).json({ success: true, data: course });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(400).json({ success: false, message: error.message });
   }
 };
 
@@ -62,12 +62,11 @@ exports.updateCourse = async (req, res) => {
     );
 
     if (!course) {
-      return res.status(404).json({ message: 'Course not found' });
+      return res.status(404).json({ success: false, message: 'Course not found' });
     }
-
-    res.status(200).json(course);
+    res.status(200).json({ success: true, data: course });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(400).json({ success: false, message: error.message });
   }
 };
 
@@ -82,10 +81,10 @@ exports.deleteCourse = async (req, res) => {
   try {
     const course = await Course.findByIdAndDelete(id);
     if (!course) {
-      return res.status(404).json({ message: 'Course not found' });
+      return res.status(404).json({ success: false, message: 'Course not found' });
     }
-    res.status(200).json({ message: 'Course deleted successfully' });
+    res.status(200).json({ success: true, message: 'Course deleted successfully' });
   } catch {
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 };

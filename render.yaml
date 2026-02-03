@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: student-api
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGO_URI
+        fromDatabase:
+          name: studentdb
+          property: connectionString
+      - key: PORT
+        value: 5000
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: GITHUB_CLIENT_ID
+        sync: false
+      - key: GITHUB_CLIENT_SECRET
+        sync: false
+      - key: CALLBACK_URL
+        value: https://your-app-name.onrender.com/github/callback
+
+databases:
+  - name: studentdb
+    plan: free
+    ipAllowList:
+      - source: 0.0.0.0/0
+        description: Allow all IPs

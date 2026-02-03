@@ -5,9 +5,9 @@ const mongoose = require('mongoose');
 exports.getStudents = async (req, res) => {
   try {
     const students = await Student.find();
-    res.status(200).json(students);
+    res.status(200).json({ success: true, data: students });
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 };
 
@@ -22,11 +22,11 @@ exports.getStudentById = async (req, res) => {
   try {
     const student = await Student.findById(id);
     if (!student) {
-      return res.status(404).json({ message: 'Student not found' });
+      return res.status(404).json({ success: false, message: 'Student not found' });
     }
-    res.status(200).json(student);
+    res.status(200).json({ success: true, data: student });
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 };
 
@@ -40,9 +40,9 @@ exports.createStudent = async (req, res) => {
 
   try {
     const student = await Student.create({ name, course, level });
-    res.status(201).json(student);
+    res.status(201).json({ success: true, data: student });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(400).json({ success: false, message: error.message });
   }
 };
 
@@ -62,12 +62,11 @@ exports.updateStudent = async (req, res) => {
     );
 
     if (!student) {
-      return res.status(404).json({ message: 'Student not found' });
+      return res.status(404).json({ success: false, message: 'Student not found' });
     }
-
-    res.status(200).json(student);
+    res.status(200).json({ success: true, data: student });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(400).json({ success: false, message: error.message });
   }
 };
 
@@ -82,10 +81,10 @@ exports.deleteStudent = async (req, res) => {
   try {
     const student = await Student.findByIdAndDelete(id);
     if (!student) {
-      return res.status(404).json({ message: 'Student not found' });
+      return res.status(404).json({ success: false, message: 'Student not found' });
     }
-    res.status(200).json({ message: 'Student deleted successfully' });
+    res.status(200).json({ success: true, message: 'Student deleted successfully' });
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 };
