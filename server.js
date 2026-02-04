@@ -63,7 +63,7 @@ app.use((req, res, next) => {
   passport.use(new GithubStrategy({
     clientID: process.env.GITHUB_CLIENT_ID,
     clientSecret: process.env.GITHUB_CLIENT_SECRET,
-    callbackURL: process.env.CALLBACK_URL
+    callbackURL: "/github/callback"
   },
   function(accessToken, refreshToken, profile, done) {  
     //user.findOrCreate({ githubId: profile.id }, function (err, user) {
@@ -88,19 +88,72 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // Root route (friendly message)
 app.get('/', (req, res) => {
-  if (req.session.user !== undefined) {
-    res.send(`
-      <h1>Welcome ${req.session.user.displayName}!</h1>
-      <p>You are logged in as ${req.session.user.username}</p>
-      <a href="/logout">Logout</a> | <a href="/api-docs">API Docs</a>
-    `);
-  } else {
-    res.send(`
-      <h1>Welcome to the Student API!</h1>
-      <p><a href="/login">Login with GitHub</a></p>
-      <p>Use <a href="/api-docs">/api-docs</a> to access Swagger UI.</p>
-    `);
+  res.send(`
+    <h1>Welcome to the Student API!</h1>
+    <p><a href="/login">Login with GitHub</a></p>
+  `);
+});
+
+// Welcome route shown after successful GitHub login
+app.get('/welcome', (req, res) => {
+  // Require the user to be logged in
+  if (!req.session.user) {
+    return res.redirect('/login');
   }
+
+  res.send(`
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>Hello User</title>
+      <style>
+        body {
+          margin: 0;
+          padding: 0;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          min-height: 100vh;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+          background: #f5f7fb;
+        }
+        .container {
+          background: #ffffff;
+          border-radius: 10px;
+          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+          padding: 40px;
+          text-align: center;
+          max-width: 480px;
+        }
+        h1 {
+          margin-bottom: 16px;
+          font-size: 32px;
+        }
+        a {
+          color: #3b82f6;
+          text-decoration: none;
+          font-weight: 600;
+        }
+        a:hover {
+          text-decoration: underline;
+        }
+        .logout {
+          margin-top: 16px;
+          display: block;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <h1>Hello User</h1>
+        <p><a href="/api-docs">Go to API Docs</a></p>
+        <a class="logout" href="/logout">Logout</a>
+      </div>
+    </body>
+    </html>
+  `);
 });
 
 // 404 Not Found handler

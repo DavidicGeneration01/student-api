@@ -83,14 +83,18 @@ router.get('/login', (req, res) => {
 });
 
 // GitHub OAuth callback route
-router.get('/github', passport.authenticate('github', { scope: [ 'user:email' ] }));
+router.get('/github', passport.authenticate('github', { scope: [ 'user:email' ] })); 
 
-router.get('/github/callback', passport.authenticate('github', { 
-  failureRedirect: '/login', session: false}),
+router.get(
+  '/github/callback',
+  passport.authenticate('github', { failureRedirect: '/login' }),
   (req, res) => {
-  req.session.user = req.user;
-  res.redirect('/');
-});
+    // Store the authenticated user in the session
+    req.session.user = req.user;
+    // Redirect to a welcome page after successful login
+    res.redirect('/welcome');
+  }
+);
 
 // Logout route
 router.get('/logout', function(req, res, next) {
