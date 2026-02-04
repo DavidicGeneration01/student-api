@@ -19,6 +19,10 @@ app.set('trust proxy', 1);
 
 // Validate required environment variables
 const requiredEnvVars = ['MONGO_URI', 'GITHUB_CLIENT_ID', 'GITHUB_CLIENT_SECRET', 'SESSION_SECRET'];
+// In production (e.g. Render), CALLBACK_URL must be set to the full HTTPS callback URL
+if (process.env.NODE_ENV === 'production') {
+  requiredEnvVars.push('CALLBACK_URL');
+}
 const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
 
 if (missingEnvVars.length > 0) {
@@ -64,17 +68,19 @@ app.use((req, res, next) => {
   next();
 });
 
-  // Get callback URL from environment or use localhost for development
-  const callbackURL = process.env.CALLBACK_URL || 'http://localhost:5000/github/callback';
-  
-  // Log the callback URL being used (helpful for debugging)
+  // Callback URL: must be full HTTPS URL in production (e.g. Render)
+  const callbackURL = (process.env.CALLBACK_URL || 'http://localhost:5000/github/callback').trim();
+  if (!callbackURL.startsWith('https://') && process.env.NODE_ENV === 'production') {
+    console.error('CALLBACK_URL must be an HTTPS URL in production. Current value:', callbackURL || '(empty)');
+    process.exit(1);
+  }
   console.log('GitHub OAuth Callback URL:', callbackURL);
-  
+
   passport.use(new GithubStrategy({
     clientID: process.env.GITHUB_CLIENT_ID,
     clientSecret: process.env.GITHUB_CLIENT_SECRET,
-    // Use an explicit callback URL so it matches GitHub + Render config
-    callbackURL: callbackURL
+    callbackURL: callbackURL,
+    proxy: true  // Trust X-Forwarded-Proto so redirect_uri uses https behind Render
   },
   function(accessToken, refreshToken, profile, done) {  
     //user.findOrCreate({ githubId: profile.id }, function (err, user) {
