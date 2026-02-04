@@ -13,6 +13,10 @@ dotenv.config();
 
 const app = express();
 
+// Trust proxy - Required for Render and other cloud platforms
+// This ensures Express correctly identifies HTTPS requests behind the proxy
+app.set('trust proxy', 1);
+
 // Validate required environment variables
 const requiredEnvVars = ['MONGO_URI', 'GITHUB_CLIENT_ID', 'GITHUB_CLIENT_SECRET', 'SESSION_SECRET'];
 const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
@@ -60,10 +64,17 @@ app.use((req, res, next) => {
   next();
 });
 
+  // Get callback URL from environment or use localhost for development
+  const callbackURL = process.env.CALLBACK_URL || 'http://localhost:5000/github/callback';
+  
+  // Log the callback URL being used (helpful for debugging)
+  console.log('GitHub OAuth Callback URL:', callbackURL);
+  
   passport.use(new GithubStrategy({
     clientID: process.env.GITHUB_CLIENT_ID,
     clientSecret: process.env.GITHUB_CLIENT_SECRET,
-    callbackURL: "/github/callback"
+    // Use an explicit callback URL so it matches GitHub + Render config
+    callbackURL: callbackURL
   },
   function(accessToken, refreshToken, profile, done) {  
     //user.findOrCreate({ githubId: profile.id }, function (err, user) {
