@@ -8,201 +8,177 @@ const session = require('express-session');
 const GithubStrategy = require('passport-github2').Strategy;
 const cors = require('cors');
 
-
 dotenv.config();
 
 const app = express();
 
-// Trust proxy - Required for Render and other cloud platforms
-// This ensures Express correctly identifies HTTPS requests behind the proxy
+/* --------------------------------------------------
+   TRUST PROXY (REQUIRED FOR RENDER / HTTPS)
+--------------------------------------------------- */
 app.set('trust proxy', 1);
 
-// Validate required environment variables
-const requiredEnvVars = ['MONGO_URI', 'GITHUB_CLIENT_ID', 'GITHUB_CLIENT_SECRET', 'SESSION_SECRET'];
-// In production (e.g. Render), CALLBACK_URL must be set to the full HTTPS callback URL
-if (process.env.NODE_ENV === 'production') {
-  requiredEnvVars.push('CALLBACK_URL');
-}
-const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
+/* --------------------------------------------------
+   ENV VALIDATION
+--------------------------------------------------- */
+const requiredEnv = [
+  'MONGO_URI',
+  'GITHUB_CLIENT_ID',
+  'GITHUB_CLIENT_SECRET',
+  'SESSION_SECRET',
+];
 
-if (missingEnvVars.length > 0) {
-  console.error(`Missing required environment variables: ${missingEnvVars.join(', ')}`);
+if (process.env.NODE_ENV === 'production') {
+  requiredEnv.push('CALLBACK_URL');
+}
+
+const missing = requiredEnv.filter(v => !process.env[v]);
+if (missing.length) {
+  console.error('Missing environment variables:', missing);
   process.exit(1);
 }
 
-// Use JSON body parsing and CORS
+/* --------------------------------------------------
+   MIDDLEWARE
+--------------------------------------------------- */
 app.use(express.json());
-// Configure CORS - allow specific origins or all for development
-const corsOptions = {
-  origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : '*',
-  credentials: true,
-  optionsSuccessStatus: 200
-};
-app.use(cors(corsOptions));
 
-// Session and passport
-app.use(session({ 
+const allowedOrigins = [
+  'https://student-api-9llg.onrender.com',
+  'http://localhost:5000',
+];
+
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: true,
+}));
+
+app.use(session({
   secret: process.env.SESSION_SECRET,
   resave: false,
-  saveUninitialized: true,
+  saveUninitialized: false,
   cookie: {
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
-    sameSite: 'lax'
-  }
+    sameSite: 'lax',
+  },
 }));
+
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Basic CORS headers for older clients
-app.use((req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader(
-    "Access-Control-Allow-Headers",
-    "Origin, X-Requested-With, Content-Type, Accept, Authorization"
-  );
-  res.setHeader(
-    "Access-Control-Allow-Methods",
-    "POST, GET, PUT, PATCH, OPTIONS, DELETE"
-  );
-  next();
-});
+/* --------------------------------------------------
+   PASSPORT CONFIG
+--------------------------------------------------- */
+const callbackURL =
+  process.env.NODE_ENV === 'production'
+    ? process.env.CALLBACK_URL
+    : 'http://localhost:5000/github/callback';
 
-  // Callback URL: must be full HTTPS URL in production (e.g. Render)
-  const callbackURL = (process.env.CALLBACK_URL || 'http://localhost:5000/github/callback').trim();
-  if (!callbackURL.startsWith('https://') && process.env.NODE_ENV === 'production') {
-    console.error('CALLBACK_URL must be an HTTPS URL in production. Current value:', callbackURL || '(empty)');
-    process.exit(1);
-  }
-  console.log('GitHub OAuth Callback URL:', callbackURL);
+console.log('GitHub OAuth callback URL:', callbackURL);
 
-  passport.use(new GithubStrategy({
-    clientID: process.env.GITHUB_CLIENT_ID,
-    clientSecret: process.env.GITHUB_CLIENT_SECRET,
-    callbackURL: callbackURL,
-    proxy: true  // Trust X-Forwarded-Proto so redirect_uri uses https behind Render
-  },
-  function(accessToken, refreshToken, profile, done) {  
-    //user.findOrCreate({ githubId: profile.id }, function (err, user) {
+passport.use(
+  new GithubStrategy(
+    {
+      clientID: process.env.GITHUB_CLIENT_ID,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET,
+      callbackURL,
+      proxy: true,
+    },
+    (accessToken, refreshToken, profile, done) => {
       return done(null, profile);
-    //}
-  }
-  ));
+    }
+  )
+);
 
-  passport.serializeUser((user, done) => {
-    done(null, user);
-  });
+passport.serializeUser((user, done) => done(null, user));
+passport.deserializeUser((user, done) => done(null, user));
 
-  passport.deserializeUser((user, done) => {
-    done(null, user);
-  });
+/* --------------------------------------------------
+   AUTH GUARD
+--------------------------------------------------- */
+function ensureAuth(req, res, next) {
+  if (req.isAuthenticated()) return next();
+  res.redirect('/login');
+}
 
-// Routes
-app.use('/', require('./routes/index'));
-app.use('/api/students', require('./routes/studentRoutes'));
-app.use('/api/courses', require('./routes/courseRoutes'));
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+/* --------------------------------------------------
+   ROUTES
+--------------------------------------------------- */
 
-// Root route (friendly message)
+// Home
 app.get('/', (req, res) => {
   res.send(`
-    <h1>Welcome to the Student API!</h1>
-    <p><a href="/login">Login with GitHub</a></p>
+    <h1>Welcome to the Student API</h1>
+    <a href="/login">Login with GitHub</a>
   `);
 });
 
-// Welcome route shown after successful GitHub login
-app.get('/welcome', (req, res) => {
-  // Require the user to be logged in
-  if (!req.session.user) {
-    return res.redirect('/login');
+// Login
+app.get(
+  '/login',
+  passport.authenticate('github', { scope: ['user:email'] })
+);
+
+// GitHub Callback
+app.get(
+  '/github/callback',
+  passport.authenticate('github', { failureRedirect: '/' }),
+  (req, res) => {
+    res.redirect('/api-docs');
   }
+);
 
-  res.send(`
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="UTF-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>Hello User</title>
-      <style>
-        body {
-          margin: 0;
-          padding: 0;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          min-height: 100vh;
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
-          background: #f5f7fb;
-        }
-        .container {
-          background: #ffffff;
-          border-radius: 10px;
-          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-          padding: 40px;
-          text-align: center;
-          max-width: 480px;
-        }
-        h1 {
-          margin-bottom: 16px;
-          font-size: 32px;
-        }
-        a {
-          color: #3b82f6;
-          text-decoration: none;
-          font-weight: 600;
-        }
-        a:hover {
-          text-decoration: underline;
-        }
-        .logout {
-          margin-top: 16px;
-          display: block;
-        }
-      </style>
-    </head>
-    <body>
-      <div class="container">
-        <h1>Hello User</h1>
-        <p><a href="/api-docs">Go to API Docs</a></p>
-        <a class="logout" href="/logout">Logout</a>
-      </div>
-    </body>
-    </html>
-  `);
+// Logout
+app.get('/logout', (req, res, next) => {
+  req.logout(err => {
+    if (err) return next(err);
+    req.session.destroy(() => {
+      res.clearCookie('connect.sid');
+      res.redirect('/');
+    });
+  });
 });
 
-// 404 Not Found handler
-const { notFoundHandler, errorHandler } = require('./middleware/Validate');
-app.use(notFoundHandler);
-
-// Global error handling middleware (must be last)
-app.use(errorHandler);
-
-// Handle unhandled promise rejections
-process.on('unhandledRejection', (err) => {
-  console.error('Unhandled Promise Rejection:', err);
-  // Gracefully shutdown on unhandled rejection
-  process.exit(1);
+// Health check (Render friendly)
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok' });
 });
 
-// Handle uncaught exceptions
-process.on('uncaughtException', (err) => {
-  console.error('Uncaught Exception:', err);
-  process.exit(1);
+/* --------------------------------------------------
+   PROTECTED SWAGGER
+--------------------------------------------------- */
+app.use(
+  '/api-docs',
+  ensureAuth,
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerDocument)
+);
+
+/* --------------------------------------------------
+   API ROUTES
+--------------------------------------------------- */
+app.use('/api/students', require('./routes/studentRoutes'));
+app.use('/api/courses', require('./routes/courseRoutes'));
+
+/* --------------------------------------------------
+   ERROR HANDLING
+--------------------------------------------------- */
+app.use((req, res) => {
+  res.status(404).json({ message: 'Route not found' });
 });
 
-// DB connection
+/* --------------------------------------------------
+   DATABASE + SERVER
+--------------------------------------------------- */
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
     console.log('MongoDB connected');
     app.listen(process.env.PORT || 5000, () => {
-      console.log(`Server running on port ${process.env.PORT || 5000} in ${process.env.NODE_ENV} mode`);
+      console.log(`Server running on port ${process.env.PORT || 5000}`);
     });
   })
-  .catch((error) => {
-    console.error('MongoDB connection error:', error);
+  .catch(err => {
+    console.error('MongoDB connection error:', err);
     process.exit(1);
   });
