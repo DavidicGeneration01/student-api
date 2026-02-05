@@ -12,10 +12,6 @@
       "get": {
         "summary": "Get all students",
         "responses": { "200": { "description": "OK" } }
-      },
-      "post": {
-        "summary": "Create student",
-        "responses": { "201": { "description": "Created" } }
       }
     },
     "/api/courses": {

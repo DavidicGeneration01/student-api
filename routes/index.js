@@ -2,9 +2,7 @@ const express = require('express');
 const passport = require('passport');
 const router = express.Router();
 
-/* ==============================
-   LOGIN PAGE
-================================ */
+/* LOGIN */
 router.get('/login', (req, res) => {
   res.send(`
     <h1>Authorize College</h1>
@@ -12,13 +10,12 @@ router.get('/login', (req, res) => {
   `);
 });
 
-/* ==============================
-   GITHUB AUTH
-================================ */
+/* GITHUB AUTH */
 router.get('/github',
   passport.authenticate('github', { scope: ['user:email'] })
 );
 
+/* CALLBACK */
 router.get(
   '/github/callback',
   passport.authenticate('github', { failureRedirect: '/login' }),
@@ -27,9 +24,7 @@ router.get(
   }
 );
 
-/* ==============================
-   WELCOME
-================================ */
+/* WELCOME */
 router.get('/welcome', (req, res) => {
   if (!req.isAuthenticated()) return res.redirect('/login');
 
@@ -40,9 +35,7 @@ router.get('/welcome', (req, res) => {
   `);
 });
 
-/* ==============================
-   LOGOUT
-================================ */
+/* LOGOUT */
 router.get('/logout', (req, res, next) => {
   req.logout(err => {
     if (err) return next(err);

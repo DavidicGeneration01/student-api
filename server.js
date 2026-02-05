@@ -12,14 +12,14 @@ dotenv.config();
 
 const app = express();
 
-/* ==============================
-   TRUST PROXY (RENDER REQUIRED)
-================================ */
+/* =========================
+   TRUST PROXY (RENDER)
+========================= */
 app.set('trust proxy', 1);
 
-/* ==============================
+/* =========================
    BODY + CORS
-================================ */
+========================= */
 app.use(express.json());
 
 app.use(cors({
@@ -27,9 +27,9 @@ app.use(cors({
   credentials: true
 }));
 
-/* ==============================
-   SESSION + PASSPORT
-================================ */
+/* =========================
+   SESSION
+========================= */
 app.use(session({
   name: 'connect.sid',
   secret: process.env.SESSION_SECRET,
@@ -43,12 +43,12 @@ app.use(session({
   }
 }));
 
+/* =========================
+   PASSPORT
+========================= */
 app.use(passport.initialize());
 app.use(passport.session());
 
-/* ==============================
-   PASSPORT GITHUB STRATEGY
-================================ */
 passport.use(new GithubStrategy(
   {
     clientID: process.env.GITHUB_CLIENT_ID,
@@ -64,25 +64,25 @@ passport.use(new GithubStrategy(
 passport.serializeUser((user, done) => done(null, user));
 passport.deserializeUser((user, done) => done(null, user));
 
-/* ==============================
+/* =========================
    AUTH MIDDLEWARE
-================================ */
+========================= */
 function ensureAuthenticated(req, res, next) {
   if (req.isAuthenticated()) return next();
-  return res.redirect('/login');
+  res.redirect('/login');
 }
 
-/* ==============================
+/* =========================
    ROUTES
-================================ */
+========================= */
 app.use('/', require('./routes/index'));
 
 app.use('/api/students', ensureAuthenticated, require('./routes/studentRoutes'));
 app.use('/api/courses', ensureAuthenticated, require('./routes/courseRoutes'));
 
-/* ==============================
-   SWAGGER (AUTH + COOKIES)
-================================ */
+/* =========================
+   SWAGGER
+========================= */
 app.use(
   '/api-docs',
   ensureAuthenticated,
@@ -94,25 +94,23 @@ app.use(
   })
 );
 
-/* ==============================
+/* =========================
    ROOT
-================================ */
+========================= */
 app.get('/', (req, res) => {
-  res.send(`
-    <h1>Student API</h1>
-    <a href="/login">Login with GitHub</a>
-  `);
+  res.send('<a href="/login">Login with GitHub</a>');
 });
 
-/* ==============================
+/* =========================
    DB + SERVER
-================================ */
+========================= */
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     console.log('MongoDB connected');
-    app.listen(process.env.PORT || 5000, () =>
-      console.log('Server running')
-    );
+    console.log('GitHub CALLBACK_URL =', process.env.CALLBACK_URL);
+    app.listen(process.env.PORT || 5000, () => {
+      console.log('Server running');
+    });
   })
   .catch(err => {
     console.error(err);
