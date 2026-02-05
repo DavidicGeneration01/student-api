@@ -2,206 +2,26 @@
   "openapi": "3.0.0",
   "info": {
     "title": "Student & Course API",
-    "version": "1.0.0",
-    "description": "REST API for managing students and courses"
+    "version": "1.0.0"
   },
   "servers": [
-    {
-      "url": "http://localhost:5000"
-    }
+    { "url": "/" }
   ],
   "paths": {
     "/api/students": {
       "get": {
         "summary": "Get all students",
-        "responses": {
-          "200": { "description": "Success" },
-          "500": { "description": "Server error" }
-        }
+        "responses": { "200": { "description": "OK" } }
       },
       "post": {
-        "summary": "Create a student",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": ["name", "course", "level"],
-                "properties": {
-                  "name": { "type": "string" },
-                  "course": { "type": "string" },
-                  "level": { "type": "number", "minimum": 100, "maximum": 500 }
-                },
-                "example": {
-                  "name": "John Doe",
-                  "course": "Computer Science",
-                  "level": 200
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": { "description": "Created" },
-          "400": { "description": "Validation error" }
-        }
+        "summary": "Create student",
+        "responses": { "201": { "description": "Created" } }
       }
     },
-    "/api/students/{id}": {
-      "get": {
-        "summary": "Get student by ID",
-        "parameters": [
-          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" }, "description": "Student ID" }
-        ],
-        "responses": {
-          "200": { "description": "Success" },
-          "400": { "description": "Invalid ID" },
-          "404": { "description": "Not found" }
-        }
-      },
-      "put": {
-        "summary": "Update student",
-        "parameters": [
-          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" }, "description": "Student ID" }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "name": { "type": "string", "minLength": 2 },
-                  "course": { "type": "string" },
-                  "level": { "type": "number", "minimum": 100, "maximum": 500 }
-                },
-                "example": {
-                  "name": "Jane Smith",
-                  "course": "Information Technology",
-                  "level": 300
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": { "description": "Updated" },
-          "400": { "description": "Invalid ID or validation error" },
-          "404": { "description": "Not found" }
-        }
-      },
-      "delete": {
-        "summary": "Delete student",
-        "parameters": [
-          { "name": "id", "in": "path", "required": true }
-        ],
-        "responses": {
-          "200": { "description": "Deleted" },
-          "404": { "description": "Not found" }
-        }
-      }
-    },
-
     "/api/courses": {
       "get": {
         "summary": "Get all courses",
-        "responses": {
-          "200": { "description": "Success" }
-        }
-      },
-      "post": {
-        "summary": "Create course",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": ["title", "code", "department", "creditUnits", "level", "semester"],
-                "properties": {
-                  "title": { "type": "string" },
-                  "code": { "type": "string", "minLength": 2 },
-                  "department": { "type": "string" },
-                  "creditUnits": { "type": "number", "minimum": 1, "maximum": 6 },
-                  "level": { "type": "number", "minimum": 100, "maximum": 500 },
-                  "semester": { "type": "string", "enum": ["First", "Second"] }
-                },
-                "example": {
-                  "title": "Data Structures",
-                  "code": "CS201",
-                  "department": "Computer Science",
-                  "creditUnits": 3,
-                  "level": 200,
-                  "semester": "First"
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": { "description": "Created" },
-          "400": { "description": "Validation error" }
-        }
-      }
-    },
-    "/api/courses/{id}": {
-      "get": {
-        "summary": "Get course by ID",
-        "parameters": [
-          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" }, "description": "Course ID" }
-        ],
-        "responses": {
-          "200": { "description": "Success" },
-          "400": { "description": "Invalid ID" },
-          "404": { "description": "Not found" }
-        }
-      },
-      "put": {
-        "summary": "Update course",
-        "parameters": [
-          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" }, "description": "Course ID" }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "title": { "type": "string" },
-                  "code": { "type": "string", "minLength": 2 },
-                  "department": { "type": "string" },
-                  "creditUnits": { "type": "number", "minimum": 1, "maximum": 6 },
-                  "level": { "type": "number", "minimum": 100, "maximum": 500 },
-                  "semester": { "type": "string", "enum": ["First", "Second"] }
-                },
-                "example": {
-                  "title": "Advanced Algorithms",
-                  "code": "CS401",
-                  "department": "Computer Science",
-                  "creditUnits": 4,
-                  "level": 400,
-                  "semester": "First"
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": { "description": "Updated" },
-          "400": { "description": "Invalid ID or validation error" },
-          "404": { "description": "Not found" }
-        }
-      },
-      "delete": {
-        "summary": "Delete course",
-        "parameters": [
-          { "name": "id", "in": "path", "required": true }
-        ],
-        "responses": {
-          "200": { "description": "Deleted" }
-        }
+        "responses": { "200": { "description": "OK" } }
       }
     }
   }
