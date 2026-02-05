@@ -82,26 +82,29 @@ router.get('/login', (req, res) => {
   `);
 });
 
-// GitHub OAuth callback route
-router.get('/github', passport.authenticate('github', { scope: [ 'user:email' ] })); 
+// GitHub OAuth start
+router.get('/github', passport.authenticate('github', { scope: ['user:email'] }));
 
+// GitHub OAuth callback
 router.get(
   '/github/callback',
   passport.authenticate('github', { failureRedirect: '/login' }),
   (req, res) => {
     // Store the authenticated user in the session
     req.session.user = req.user;
-    // Redirect to a welcome page after successful login
+    // Redirect to welcome page (or directly to Swagger UI if you prefer)
     res.redirect('/welcome');
+    // If you want to skip welcome and go straight to Swagger:
+    // res.redirect('/api-docs');
   }
 );
 
 // Logout route
-router.get('/logout', function(req, res, next) {
-    req.logout(function(err) {
-        if (err) { return next(err); }  
-        res.redirect('/');
-    });
+router.get('/logout', (req, res, next) => {
+  req.logout(function(err) {
+    if (err) { return next(err); }
+    res.redirect('/');
+  });
 });
 
 module.exports = router;
