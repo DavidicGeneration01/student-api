@@ -2,7 +2,7 @@ const express = require('express');
 const passport = require('passport');
 const router = express.Router();
 
-/* LOGIN */
+/* LOGIN PAGE */
 router.get('/login', (req, res) => {
   res.send(`
     <h1>Authorize College</h1>
@@ -20,16 +20,19 @@ router.get(
   '/github/callback',
   passport.authenticate('github', { failureRedirect: '/login' }),
   (req, res) => {
+    // Store user in session
+    req.session.user = req.user;
     res.redirect('/welcome');
   }
 );
 
-/* WELCOME */
+/* WELCOME PAGE */
 router.get('/welcome', (req, res) => {
   if (!req.isAuthenticated()) return res.redirect('/login');
 
   res.send(`
     <h1>Hello User</h1>
+    <p>Welcome, ${req.user.username}</p>
     <a href="/api-docs">Go to API Docs</a><br/>
     <a href="/logout">Logout</a>
   `);

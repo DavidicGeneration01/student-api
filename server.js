@@ -9,27 +9,19 @@ const GithubStrategy = require('passport-github2').Strategy;
 const cors = require('cors');
 
 dotenv.config();
-
 const app = express();
 
-/* =========================
-   TRUST PROXY (RENDER)
-========================= */
+/* ========== TRUST PROXY ========== */
 app.set('trust proxy', 1);
 
-/* =========================
-   BODY + CORS
-========================= */
+/* ========== CORS & BODY ========== */
 app.use(express.json());
-
 app.use(cors({
   origin: 'https://student-api-9llg.onrender.com',
   credentials: true
 }));
 
-/* =========================
-   SESSION
-========================= */
+/* ========== SESSION ========== */
 app.use(session({
   name: 'connect.sid',
   secret: process.env.SESSION_SECRET,
@@ -43,9 +35,7 @@ app.use(session({
   }
 }));
 
-/* =========================
-   PASSPORT
-========================= */
+/* ========== PASSPORT ========== */
 app.use(passport.initialize());
 app.use(passport.session());
 
@@ -64,53 +54,29 @@ passport.use(new GithubStrategy(
 passport.serializeUser((user, done) => done(null, user));
 passport.deserializeUser((user, done) => done(null, user));
 
-/* =========================
-   AUTH MIDDLEWARE
-========================= */
+/* ========== AUTH MIDDLEWARE ========== */
 function ensureAuthenticated(req, res, next) {
   if (req.isAuthenticated()) return next();
   res.redirect('/login');
 }
 
-/* =========================
-   ROUTES
-========================= */
+/* ========== ROUTES ========== */
 app.use('/', require('./routes/index'));
-
 app.use('/api/students', ensureAuthenticated, require('./routes/studentRoutes'));
 app.use('/api/courses', ensureAuthenticated, require('./routes/courseRoutes'));
+app.use('/api-docs', ensureAuthenticated, swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
-/* =========================
-   SWAGGER
-========================= */
-app.use(
-  '/api-docs',
-  ensureAuthenticated,
-  swaggerUi.serve,
-  swaggerUi.setup(swaggerDocument, {
-    swaggerOptions: {
-      withCredentials: true
-    }
-  })
-);
-
-/* =========================
-   ROOT
-========================= */
+/* ========== ROOT ========== */
 app.get('/', (req, res) => {
-  res.send('<a href="/login">Login with GitHub</a>');
+  res.redirect('/login');
 });
 
-/* =========================
-   DB + SERVER
-========================= */
+/* ========== DATABASE & SERVER ========== */
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     console.log('MongoDB connected');
     console.log('GitHub CALLBACK_URL =', process.env.CALLBACK_URL);
-    app.listen(process.env.PORT || 5000, () => {
-      console.log('Server running');
-    });
+    app.listen(process.env.PORT || 5000, () => console.log('Server running'));
   })
   .catch(err => {
     console.error(err);
