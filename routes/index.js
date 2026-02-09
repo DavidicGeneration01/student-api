@@ -86,9 +86,9 @@ router.get('/login', (req, res) => {
 router.get('/github', passport.authenticate('github', { scope: [ 'user:email' ] }));
 
 router.get('/github/callback', passport.authenticate('github', { 
-  failureRedirect: '/login', session: false}),
+  failureRedirect: '/login'}),
   (req, res) => {
-  req.session.user = req.user;
+  // Session is automatically handled by passport
   res.redirect('/');
 });
 
@@ -96,7 +96,10 @@ router.get('/github/callback', passport.authenticate('github', {
 router.get('/logout', function(req, res, next) {
     req.logout(function(err) {
         if (err) { return next(err); }  
-        res.redirect('/');
+        req.session.destroy((err) => {
+            if (err) { return next(err); }
+            res.redirect('/');
+        });
     });
 });
 

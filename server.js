@@ -88,10 +88,10 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // Root route (friendly message)
 app.get('/', (req, res) => {
-  if (req.session.user !== undefined) {
+  if (req.isAuthenticated()) {
     res.send(`
-      <h1>Welcome ${req.session.user.displayName}!</h1>
-      <p>You are logged in as ${req.session.user.username}</p>
+      <h1>Welcome ${req.user.displayName}!</h1>
+      <p>You are logged in as ${req.user.username}</p>
       <a href="/logout">Logout</a> | <a href="/api-docs">API Docs</a>
     `);
   } else {
