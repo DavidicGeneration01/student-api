@@ -3,66 +3,144 @@
   "info": {
     "title": "Student & Course API",
     "version": "1.0.0",
-    "description": "A simple CRUD API for managing students and courses"
+    "description": "A CRUD API for managing students and courses with GitHub OAuth authentication"
   },
   "servers": [
     { "url": "/" }
   ],
   "components": {
+    "securitySchemes": {
+      "cookieAuth": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "connect.sid",
+        "description": "Session cookie from GitHub OAuth login"
+      }
+    },
     "schemas": {
       "Student": {
         "type": "object",
+        "required": ["name", "course", "level"],
         "properties": {
-          "id": {
+          "_id": {
             "type": "string",
-            "description": "Student ID"
+            "description": "MongoDB student ID",
+            "example": "507f1f77bcf86cd799439011"
           },
           "name": {
             "type": "string",
-            "description": "Student name"
-          },
-          "email": {
-            "type": "string",
-            "description": "Student email"
-          },
-          "age": {
-            "type": "number",
-            "description": "Student age"
+            "description": "Student name (minimum 2 characters)",
+            "minLength": 2,
+            "example": "John Doe"
           },
           "course": {
             "type": "string",
-            "description": "Course enrolled in"
+            "description": "Course name",
+            "example": "Computer Science"
+          },
+          "level": {
+            "type": "number",
+            "description": "Student level (100-500)",
+            "minimum": 100,
+            "maximum": 500,
+            "example": 300
           }
         }
       },
       "Course": {
         "type": "object",
+        "required": ["title", "code", "department", "creditUnits", "level", "semester"],
         "properties": {
-          "id": {
+          "_id": {
             "type": "string",
-            "description": "Course ID"
+            "description": "MongoDB course ID",
+            "example": "507f1f77bcf86cd799439011"
           },
-          "name": {
+          "title": {
             "type": "string",
-            "description": "Course name"
+            "description": "Course title",
+            "example": "Data Structures and Algorithms"
           },
-          "description": {
+          "code": {
             "type": "string",
-            "description": "Course description"
+            "description": "Course code (minimum 2 characters)",
+            "minLength": 2,
+            "example": "CSC301"
           },
-          "credits": {
+          "department": {
+            "type": "string",
+            "description": "Department offering the course",
+            "example": "Computer Science"
+          },
+          "creditUnits": {
             "type": "number",
-            "description": "Course credits"
+            "description": "Credit units (1-6)",
+            "minimum": 1,
+            "maximum": 6,
+            "example": 3
+          },
+          "level": {
+            "type": "number",
+            "description": "Course level (100-500)",
+            "minimum": 100,
+            "maximum": 500,
+            "example": 300
+          },
+          "semester": {
+            "type": "string",
+            "description": "Semester",
+            "enum": ["First", "Second"],
+            "example": "First"
+          }
+        }
+      },
+      "ValidationError": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": false
+          },
+          "message": {
+            "type": "string",
+            "example": "Validation failed"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": ["Student name is required", "Level must be between 100 and 500"]
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": false
+          },
+          "message": {
+            "type": "string",
+            "example": "An error occurred"
           }
         }
       }
     }
   },
+  "security": [
+    {
+      "cookieAuth": []
+    }
+  ],
   "paths": {
     "/api/students": {
       "get": {
         "summary": "Get all students",
+        "description": "Retrieve a list of all students. Requires authentication.",
         "tags": ["Students"],
+        "security": [{"cookieAuth": []}],
         "responses": {
           "200": {
             "description": "List of all students",
@@ -76,18 +154,59 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized - You do not have access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "example": "You do not have access!"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         }
       },
       "post": {
         "summary": "Create a new student",
+        "description": "Create a new student record. Requires authentication and valid data.",
         "tags": ["Students"],
+        "security": [{"cookieAuth": []}],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Student"
+                "type": "object",
+                "required": ["name", "course", "level"],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 2,
+                    "example": "Jane Smith"
+                  },
+                  "course": {
+                    "type": "string",
+                    "example": "Software Engineering"
+                  },
+                  "level": {
+                    "type": "number",
+                    "minimum": 100,
+                    "maximum": 500,
+                    "example": 200
+                  }
+                }
               }
             }
           }
@@ -104,7 +223,35 @@
             }
           },
           "400": {
-            "description": "Invalid input"
+            "description": "Validation error - Invalid or missing required fields",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - You do not have access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "example": "You do not have access!"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         }
       }
@@ -112,7 +259,9 @@
     "/api/students/{id}": {
       "get": {
         "summary": "Get a student by ID",
+        "description": "Retrieve a specific student by their MongoDB ID. Requires authentication.",
         "tags": ["Students"],
+        "security": [{"cookieAuth": []}],
         "parameters": [
           {
             "name": "id",
@@ -121,7 +270,8 @@
             "schema": {
               "type": "string"
             },
-            "description": "Student ID"
+            "description": "MongoDB student ID",
+            "example": "507f1f77bcf86cd799439011"
           }
         ],
         "responses": {
@@ -135,14 +285,54 @@
               }
             }
           },
+          "400": {
+            "description": "Invalid student ID format",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "example": "You do not have access!"
+                }
+              }
+            }
+          },
           "404": {
-            "description": "Student not found"
+            "description": "Student not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         }
       },
       "put": {
         "summary": "Update a student by ID",
+        "description": "Update an existing student record. Requires authentication and valid data. At least one field must be provided.",
         "tags": ["Students"],
+        "security": [{"cookieAuth": []}],
         "parameters": [
           {
             "name": "id",
@@ -151,7 +341,8 @@
             "schema": {
               "type": "string"
             },
-            "description": "Student ID"
+            "description": "MongoDB student ID",
+            "example": "507f1f77bcf86cd799439011"
           }
         ],
         "requestBody": {
@@ -159,7 +350,25 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Student"
+                "type": "object",
+                "minProperties": 1,
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 2,
+                    "example": "Jane Doe Updated"
+                  },
+                  "course": {
+                    "type": "string",
+                    "example": "Information Technology"
+                  },
+                  "level": {
+                    "type": "number",
+                    "minimum": 100,
+                    "maximum": 500,
+                    "example": 400
+                  }
+                }
               }
             }
           }
@@ -175,17 +384,54 @@
               }
             }
           },
-          "404": {
-            "description": "Student not found"
-          },
           "400": {
-            "description": "Invalid input"
+            "description": "Validation error - Invalid ID format, empty body, or invalid field values",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "example": "You do not have access!"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Student not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         }
       },
       "delete": {
         "summary": "Delete a student by ID",
+        "description": "Delete a student record permanently. Requires authentication.",
         "tags": ["Students"],
+        "security": [{"cookieAuth": []}],
         "parameters": [
           {
             "name": "id",
@@ -194,15 +440,71 @@
             "schema": {
               "type": "string"
             },
-            "description": "Student ID"
+            "description": "MongoDB student ID",
+            "example": "507f1f77bcf86cd799439011"
           }
         ],
         "responses": {
           "200": {
-            "description": "Student deleted successfully"
+            "description": "Student deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Student deleted successfully"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid student ID format",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "example": "You do not have access!"
+                }
+              }
+            }
           },
           "404": {
-            "description": "Student not found"
+            "description": "Student not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         }
       }
@@ -210,7 +512,9 @@
     "/api/courses": {
       "get": {
         "summary": "Get all courses",
+        "description": "Retrieve a list of all courses. Requires authentication.",
         "tags": ["Courses"],
+        "security": [{"cookieAuth": []}],
         "responses": {
           "200": {
             "description": "List of all courses",
@@ -224,18 +528,74 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "example": "You do not have access!"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         }
       },
       "post": {
         "summary": "Create a new course",
+        "description": "Create a new course record. Requires authentication and all required fields.",
         "tags": ["Courses"],
+        "security": [{"cookieAuth": []}],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Course"
+                "type": "object",
+                "required": ["title", "code", "department", "creditUnits", "level", "semester"],
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "example": "Introduction to Programming"
+                  },
+                  "code": {
+                    "type": "string",
+                    "minLength": 2,
+                    "example": "CSC101"
+                  },
+                  "department": {
+                    "type": "string",
+                    "example": "Computer Science"
+                  },
+                  "creditUnits": {
+                    "type": "number",
+                    "minimum": 1,
+                    "maximum": 6,
+                    "example": 3
+                  },
+                  "level": {
+                    "type": "number",
+                    "minimum": 100,
+                    "maximum": 500,
+                    "example": 100
+                  },
+                  "semester": {
+                    "type": "string",
+                    "enum": ["First", "Second"],
+                    "example": "First"
+                  }
+                }
               }
             }
           }
@@ -252,7 +612,35 @@
             }
           },
           "400": {
-            "description": "Invalid input"
+            "description": "Validation error - Invalid or missing required fields",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "example": "You do not have access!"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         }
       }
@@ -260,7 +648,9 @@
     "/api/courses/{id}": {
       "get": {
         "summary": "Get a course by ID",
+        "description": "Retrieve a specific course by its MongoDB ID. Requires authentication.",
         "tags": ["Courses"],
+        "security": [{"cookieAuth": []}],
         "parameters": [
           {
             "name": "id",
@@ -269,7 +659,8 @@
             "schema": {
               "type": "string"
             },
-            "description": "Course ID"
+            "description": "MongoDB course ID",
+            "example": "507f1f77bcf86cd799439011"
           }
         ],
         "responses": {
@@ -283,14 +674,54 @@
               }
             }
           },
+          "400": {
+            "description": "Invalid course ID format",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "example": "You do not have access!"
+                }
+              }
+            }
+          },
           "404": {
-            "description": "Course not found"
+            "description": "Course not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         }
       },
       "put": {
         "summary": "Update a course by ID",
+        "description": "Update an existing course record. Requires authentication and valid data. At least one field must be provided.",
         "tags": ["Courses"],
+        "security": [{"cookieAuth": []}],
         "parameters": [
           {
             "name": "id",
@@ -299,7 +730,8 @@
             "schema": {
               "type": "string"
             },
-            "description": "Course ID"
+            "description": "MongoDB course ID",
+            "example": "507f1f77bcf86cd799439011"
           }
         ],
         "requestBody": {
@@ -307,7 +739,40 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Course"
+                "type": "object",
+                "minProperties": 1,
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "example": "Advanced Programming"
+                  },
+                  "code": {
+                    "type": "string",
+                    "minLength": 2,
+                    "example": "CSC301"
+                  },
+                  "department": {
+                    "type": "string",
+                    "example": "Computer Science"
+                  },
+                  "creditUnits": {
+                    "type": "number",
+                    "minimum": 1,
+                    "maximum": 6,
+                    "example": 4
+                  },
+                  "level": {
+                    "type": "number",
+                    "minimum": 100,
+                    "maximum": 500,
+                    "example": 300
+                  },
+                  "semester": {
+                    "type": "string",
+                    "enum": ["First", "Second"],
+                    "example": "Second"
+                  }
+                }
               }
             }
           }
@@ -323,17 +788,54 @@
               }
             }
           },
-          "404": {
-            "description": "Course not found"
-          },
           "400": {
-            "description": "Invalid input"
+            "description": "Validation error - Invalid ID format, empty body, or invalid field values",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "example": "You do not have access!"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Course not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         }
       },
       "delete": {
         "summary": "Delete a course by ID",
+        "description": "Delete a course record permanently. Requires authentication.",
         "tags": ["Courses"],
+        "security": [{"cookieAuth": []}],
         "parameters": [
           {
             "name": "id",
@@ -342,15 +844,71 @@
             "schema": {
               "type": "string"
             },
-            "description": "Course ID"
+            "description": "MongoDB course ID",
+            "example": "507f1f77bcf86cd799439011"
           }
         ],
         "responses": {
           "200": {
-            "description": "Course deleted successfully"
+            "description": "Course deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Course deleted successfully"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid course ID format",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "example": "You do not have access!"
+                }
+              }
+            }
           },
           "404": {
-            "description": "Course not found"
+            "description": "Course not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         }
       }
