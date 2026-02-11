@@ -2,22 +2,357 @@
   "openapi": "3.0.0",
   "info": {
     "title": "Student & Course API",
-    "version": "1.0.0"
+    "version": "1.0.0",
+    "description": "A simple CRUD API for managing students and courses"
   },
   "servers": [
     { "url": "/" }
   ],
+  "components": {
+    "schemas": {
+      "Student": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Student ID"
+          },
+          "name": {
+            "type": "string",
+            "description": "Student name"
+          },
+          "email": {
+            "type": "string",
+            "description": "Student email"
+          },
+          "age": {
+            "type": "number",
+            "description": "Student age"
+          },
+          "course": {
+            "type": "string",
+            "description": "Course enrolled in"
+          }
+        }
+      },
+      "Course": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Course ID"
+          },
+          "name": {
+            "type": "string",
+            "description": "Course name"
+          },
+          "description": {
+            "type": "string",
+            "description": "Course description"
+          },
+          "credits": {
+            "type": "number",
+            "description": "Course credits"
+          }
+        }
+      }
+    }
+  },
   "paths": {
     "/api/students": {
       "get": {
         "summary": "Get all students",
-        "responses": { "200": { "description": "OK" } }
+        "tags": ["Students"],
+        "responses": {
+          "200": {
+            "description": "List of all students",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Student"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a new student",
+        "tags": ["Students"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Student"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Student created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Student"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          }
+        }
+      }
+    },
+    "/api/students/{id}": {
+      "get": {
+        "summary": "Get a student by ID",
+        "tags": ["Students"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Student ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Student found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Student"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Student not found"
+          }
+        }
+      },
+      "put": {
+        "summary": "Update a student by ID",
+        "tags": ["Students"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Student ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Student"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Student updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Student"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Student not found"
+          },
+          "400": {
+            "description": "Invalid input"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete a student by ID",
+        "tags": ["Students"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Student ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Student deleted successfully"
+          },
+          "404": {
+            "description": "Student not found"
+          }
+        }
       }
     },
     "/api/courses": {
       "get": {
         "summary": "Get all courses",
-        "responses": { "200": { "description": "OK" } }
+        "tags": ["Courses"],
+        "responses": {
+          "200": {
+            "description": "List of all courses",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Course"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a new course",
+        "tags": ["Courses"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Course"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Course created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Course"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          }
+        }
+      }
+    },
+    "/api/courses/{id}": {
+      "get": {
+        "summary": "Get a course by ID",
+        "tags": ["Courses"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Course ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Course found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Course"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Course not found"
+          }
+        }
+      },
+      "put": {
+        "summary": "Update a course by ID",
+        "tags": ["Courses"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Course ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Course"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Course updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Course"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Course not found"
+          },
+          "400": {
+            "description": "Invalid input"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete a course by ID",
+        "tags": ["Courses"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Course ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Course deleted successfully"
+          },
+          "404": {
+            "description": "Course not found"
+          }
+        }
       }
     }
   }
